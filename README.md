@@ -16,9 +16,21 @@ App para macOS que convierte un macro pad USB de **15 teclas y 3 mandos** (chip 
 
 ![Iluminación](docs/iluminacion.png)
 
-## Instalar
+## Instalar con el DMG (sin compilar)
 
-Requisitos: macOS 13 o superior y las herramientas de línea de comandos (`xcode-select --install`).
+Descarga `Macropad-<versión>.dmg` de la sección [Releases](https://github.com/eric21dev/macropad/releases), arrastra Macropad a Aplicaciones y ábrela. Es un binario universal (Apple Silicon e Intel) con firma ad-hoc: **no está notarizada por Apple**, así que macOS lo bloqueará la primera vez:
+
+1. Intenta abrirla una vez.
+2. Ve a **Ajustes del Sistema → Privacidad y seguridad**, baja hasta el aviso sobre Macropad y pulsa **Abrir igualmente**. (En macOS 15 o posterior ya no vale el clic derecho → Abrir.)
+3. Alternativa en la Terminal: `xattr -dr com.apple.quarantine /Applications/Macropad.app`.
+
+**Qué permisos pide y por qué:** *Monitorización de entrada*, para leer las teclas del pad, y *Accesibilidad*, para lanzar atajos y bloquear la tecla original. No envía datos a ningún sitio: el código es este repositorio. Como la firma ad-hoc cambia con cada versión, macOS pide los permisos de nuevo al actualizar.
+
+Para generar el DMG tú mismo: `./release.sh 1.0`.
+
+## Instalar compilando
+
+Requisitos: macOS 13 o superior y las herramientas de línea de comandos (`xcode-select --install`). Compilando desde el código no hay aviso de Gatekeeper.
 
 ```bash
 git clone https://github.com/eric21dev/macropad.git && cd macropad && ./install.sh

@@ -1,0 +1,11 @@
+MACROPAD
+========
+
+1. Arrastra Macropad a la carpeta Aplicaciones.
+2. Ábrela. macOS dirá que no puede verificar al desarrollador (la app no está notarizada).
+   Ve a Ajustes del Sistema -> Privacidad y seguridad, baja hasta el aviso sobre Macropad y pulsa "Abrir igualmente".
+   Alternativa en la Terminal:  xattr -dr com.apple.quarantine /Applications/Macropad.app
+3. Concede los dos permisos que pide (Monitorización de entrada y Accesibilidad). Macropad solo los usa
+   para leer tu pad y lanzar las acciones que configures. No envía datos a ningún sitio.
+
+Código fuente y licencia (MIT): https://github.com/eric21dev/macropad
