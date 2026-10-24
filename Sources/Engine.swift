@@ -213,6 +213,7 @@ final class Engine {
         case "media": if let k = Keys.media[v] { Keys.postMedia(k) }
         case "macro": if let m = config.macros.first(where: { $0.id == v }) { runMacro(m) }
         case "profile": switchProfile(v)
+        case "overlay": Overlay.shared.show(seconds: Double(v) ?? 2)
         default: break
         }
     }

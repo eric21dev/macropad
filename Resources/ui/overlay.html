@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Chuleta</title>
+<link rel="stylesheet" href="app.css">
+<style>
+html,body{background:transparent!important;overflow:hidden}
+#stage{position:fixed;inset:0;display:flex;justify-content:center;align-items:flex-start}
+.hud{--dur:2s;width:520px;padding:22px 20px 20px;border-radius:30px;transform-origin:top center;opacity:0;
+ background:linear-gradient(160deg,rgba(38,29,21,.93),rgba(16,13,10,.95));border:1px solid rgba(255,235,200,.16);backdrop-filter:blur(18px);
+ box-shadow:0 40px 80px -20px #000,0 0 0 1px rgba(0,0,0,.4)}
+.hud.run{animation:hudIn .16s ease-out forwards,hudOut .32s ease-in calc(var(--dur) - .32s) forwards}
+@keyframes hudIn{from{opacity:0;transform:scale(calc(var(--k,1) * .96))}to{opacity:1;transform:scale(var(--k,1))}}
+@keyframes hudOut{from{opacity:1;transform:scale(var(--k,1))}to{opacity:0;transform:scale(calc(var(--k,1) * .98))}}
+.hd{display:flex;align-items:baseline;justify-content:space-between;margin:0 6px 12px}.hd b{font-size:20px;letter-spacing:.2px}.hd span{color:var(--dim);font-size:12px}
+.hud .pad{width:480px;margin:0 auto;transform:none}
+.hud .top{height:204px}.hud .lcol{width:196px}.hud .lcol .knobwrap:last-child{margin-left:18px}
+.hud .kbtn{width:58px;padding:4px 2px}.hud .kbtn span{font-size:10.5px;max-width:56px;color:#e9dfcf}.hud .kbtn i{font-size:14px;color:var(--amber)}
+.hud .knobwrap.big .kbtn{width:62px}.hud .knobwrap.big .kbtns{gap:5px}
+.hud .keys{gap:12px}.hud .key{height:84px;padding:8px}.hud .key i{font-size:11px;color:var(--amber)}.hud .key span{font-size:13.5px;-webkit-line-clamp:3;color:#fff;font-weight:560}
+.hud .key.dim span{color:rgba(255,255,255,.45);font-weight:400}.hud .kbtn.dim span{color:rgba(255,255,255,.4)}
+.hud .key,.hud .kbtn{cursor:default}
+</style>
+</head>
+<body>
+<div id="stage"><div class="hud" id="hud"></div></div>
+<script src="labels.js"></script>
+<script src="mock.js"></script>
+<script src="overlay.js"></script>
+</body>
+</html>

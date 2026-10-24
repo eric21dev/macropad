@@ -8,21 +8,7 @@ const bridge = (cmd, data) => new Promise(res => {
   if (!native) return res(mock(cmd, data));
   const id = ++_id; _pend[id] = res; window.webkit.messageHandlers.mp.postMessage({ id, cmd, data });
 });
-function mock(cmd) {
-  if (cmd !== "init") return true;
-  const slots = {}; ["kb:05:22","kb:05:27","kb:05:08","kb:05:21","kb:05:26","kb:05:07","kb:05:20","kb:05:25","kb:05:06","kb:05:1f","kb:05:24","kb:05:05","kb:05:1e","kb:05:23","kb:05:04"].forEach((t, i) => slots["k" + (i + 1)] = t);
-  Object.assign(slots, { A_l:"cc:70", A_r:"cc:6f", A_p:"cc:cd", B_l:"cc:ea", B_r:"cc:e9", B_p:"cc:e2", C_l:"cc:b6", C_r:"cc:b5", C_p:"kb:08:2c" });
-  return { config: { version: 2, slots, activeProfile: "principal", autoSwitch: true, firstRunDone: true,
-    macros: [{ id: "m1", name: "Firma de correo", steps: [{ t: "text", v: "Un saludo,\nEric" }, { t: "delay", ms: 200 }, { t: "keys", v: "cmd+return" }] }],
-    profiles: [
-      { id: "principal", name: "Principal", apps: [], led: { layer: 0, mode: "backlight", color: "amber" === "x" ? "" : "orange" },
-        bindings: { k1: { type: "keys", value: "cmd+shift+4", label: "" }, k2: { type: "app", value: "Calculator" }, k3: { type: "macro", value: "m1" }, k5: { type: "url", value: "https://github.com" }, k8: { type: "text", value: "hola mundo" },
-          k15: { type: "shell", value: "say hola" }, B_p: { type: "media", value: "mute" }, C_p: { type: "profile", value: "next" } } },
-      { id: "p2", name: "Edición de vídeo", apps: ["com.apple.FinalCut"], led: { layer: 0, mode: "press", color: "cyan" }, bindings: {} } ] },
-    status: { device: true, input: true, accessibility: true, filter: true, ledReady: true }, loginItem: true,
-    version: { version: "1.0", branch: "main", commit: "demo", date: new Date().toISOString(), dirty: false },
-    apps: [{ name: "Safari", id: "com.apple.Safari" }, { name: "Final Cut Pro", id: "com.apple.FinalCut" }] };
-}
+function mock(cmd) { return cmd === "init" ? mockInit() : true; }
 
 // ───────── estado ─────────
 const $ = (s, r = document) => r.querySelector(s);
@@ -40,40 +26,12 @@ const slotTitle = s => s[0] === "k" ? `Tecla ${s.slice(1)}` : `${KNOBNAME[s[0]]}
 const LEDC = { white: "#fff1d6", red: "#ff4b3a", orange: "#ff9a3c", yellow: "#ffd23c", green: "#4be07a", cyan: "#38e0e8", blue: "#4c8dff", purple: "#b46cff" };
 const LEDN = { white: "Blanco", red: "Rojo", orange: "Naranja", yellow: "Amarillo", green: "Verde", cyan: "Cian", blue: "Azul", purple: "Púrpura" };
 const TYPES = [["default", "Original (sin cambios)"], ["none", "Bloquear"], ["keys", "Atajo de teclado"], ["text", "Escribir texto"], ["macro", "Macro"],
-  ["app", "Abrir app"], ["url", "Abrir enlace"], ["shell", "Comando de shell"], ["media", "Multimedia"], ["profile", "Cambiar de perfil"]];
-const MEDIA = [["playpause", "Play / Pausa"], ["next", "Siguiente"], ["prev", "Anterior"], ["volup", "Volumen +"], ["voldown", "Volumen −"], ["mute", "Silencio"], ["brightup", "Brillo +"], ["brightdown", "Brillo −"]];
+  ["app", "Abrir app"], ["url", "Abrir enlace"], ["shell", "Comando de shell"], ["media", "Multimedia"], ["profile", "Cambiar de perfil"], ["overlay", "Mostrar chuleta del pad"]];
+const MEDIA = Lbl.MEDIA;
 
-// ───────── nombres legibles ─────────
-const CC = { "cc:e9": "Volumen +", "cc:ea": "Volumen −", "cc:e2": "Silencio", "cc:6f": "Brillo +", "cc:70": "Brillo −", "cc:cd": "Play/Pausa", "cc:b5": "Siguiente", "cc:b6": "Anterior" };
-function hidName(u) {
-  if (u >= 4 && u <= 29) return String.fromCharCode(65 + u - 4);
-  if (u >= 30 && u <= 38) return String(u - 29);
-  if (u === 39) return "0"; if (u === 44) return "␣"; if (u === 40) return "↩"; if (u === 41) return "⎋";
-  return "0x" + u.toString(16);
-}
-function trigName(t) {
-  if (!t) return "sin aprender"; if (CC[t]) return CC[t];
-  const [k, m, u] = t.split(":"); if (k !== "kb") return t;
-  const mm = parseInt(m, 16); return (mm & 1 ? "⌃" : "") + (mm & 2 ? "⇧" : "") + (mm & 4 ? "⌥" : "") + (mm & 8 ? "⌘" : "") + hidName(parseInt(u, 16));
-}
-const PRETTY = { cmd: "⌘", command: "⌘", shift: "⇧", alt: "⌥", opt: "⌥", option: "⌥", ctrl: "⌃", control: "⌃", return: "↩", enter: "↩", delete: "⌫", esc: "⎋", space: "␣", tab: "⇥", left: "←", right: "→", up: "↑", down: "↓" };
-const prettyCombo = c => (c || "").split("+").map(p => PRETTY[p.trim().toLowerCase()] || p.trim().toUpperCase()).join("");
-function actLabel(a, slot) {
-  if (!a || a.type === "default") return trigName(S.config.slots[slot]);
-  if (a.label) return a.label;
-  const v = a.value || "";
-  switch (a.type) {
-    case "keys": return prettyCombo(v) || "Atajo";
-    case "text": return "“" + v.replace(/\n/g, "↩") + "”";
-    case "shell": return v || "Comando";
-    case "app": return v || "App";
-    case "url": return v.replace(/^https?:\/\//, "") || "Enlace";
-    case "media": return (MEDIA.find(m => m[0] === v) || [0, "Multimedia"])[1];
-    case "macro": return (S.config.macros.find(m => m.id === v) || { name: "Macro" }).name;
-    case "profile": return v === "next" ? "Perfil ›" : v === "prev" ? "‹ Perfil" : ((S.config.profiles.find(p => p.id === v) || {}).name || "Perfil");
-    case "none": return "Bloqueada";
-  } return "";
-}
+// ───────── nombres legibles (compartidos con la chuleta) ─────────
+const trigName = Lbl.trigName, prettyCombo = Lbl.prettyCombo;
+const actLabel = (a, slot) => Lbl.actLabel(S.config, a, slot);
 const act = s => cur().bindings[s] || { type: "default" };
 function setAct(slot, patch, rerender) {
   const a = { ...act(slot), ...patch };
@@ -161,12 +119,13 @@ function fieldHTML(s, a) {
     case "media": return `<label>Tecla multimedia</label><select onchange="setAct('${s}',{value:this.value},true)">${MEDIA.map(([k, n]) => `<option value="${k}" ${a.value === k ? "selected" : ""}>${n}</option>`).join("")}</select>`;
     case "macro": return `<label>Macro</label>${S.config.macros.length ? `<select onchange="setAct('${s}',{value:this.value})">${S.config.macros.map(m => `<option value="${m.id}" ${a.value === m.id ? "selected" : ""}>${esc(m.name)}</option>`).join("")}</select>` : `<div class="hint">Aún no hay macros.</div>`}<button class="btn ghost sm mt" onclick="setTab('macros')">Ir a Macros</button>`;
     case "profile": return `<label>Perfil</label><select onchange="setAct('${s}',{value:this.value})"><option value="next" ${a.value === "next" ? "selected" : ""}>Siguiente perfil</option><option value="prev" ${a.value === "prev" ? "selected" : ""}>Anterior perfil</option>${S.config.profiles.map(p => `<option value="${p.id}" ${a.value === p.id ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select>`;
+    case "overlay": return `<label>Segundos visible</label><input type="number" min="1" max="10" step="1" value="${v || 2}" oninput="setAct('${s}',{value:this.value})"><div class="hint">Muestra sobre la pantalla el pad con lo que hace cada tecla y mando del perfil activo, y se cierra solo. Ideal como chuleta.</div>`;
     case "default": return `<div class="hint">La posición hace lo que el pad envía de fábrica.</div>`;
     case "none": return `<div class="hint">La pulsación se descarta y no hace nada.</div>`;
   } return "";
 }
 function setType(t) {
-  const s = S.sel, d = { media: "playpause", profile: "next", macro: S.config.macros[0]?.id || "" }[t];
+  const s = S.sel, d = { media: "playpause", profile: "next", overlay: "2", macro: S.config.macros[0]?.id || "" }[t];
   const a = { type: t, value: d ?? "", label: act(s).label };
   if (t === "default") { delete cur().bindings[s]; } else cur().bindings[s] = a;
   save(); refreshPad(); renderInspector();

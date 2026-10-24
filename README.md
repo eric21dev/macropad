@@ -7,6 +7,7 @@ App para macOS que convierte un macro pad USB de **15 teclas y 3 mandos** (chip 
 ## Qué hace
 
 - **Asignar:** cada tecla y cada mando (girar a izquierda, a derecha y pulsar) lanza lo que elijas: atajo de teclado, texto, macro, abrir app o enlace, comando de shell, tecla multimedia o cambio de perfil.
+- **Chuleta:** una acción que muestra sobre la pantalla el pad con lo que hace cada tecla y mando del perfil activo, y se cierra sola a los pocos segundos.
 - **Macros:** secuencias de pasos (atajos, texto, esperas, comandos, apps, enlaces, multimedia).
 - **Perfiles:** conjuntos de asignaciones; cada perfil puede activarse solo cuando una app concreta está al frente.
 - **Iluminación:** modo, color y capa del LED, guardados en el propio pad. Se envían por HID, **sin sudo**.
@@ -38,7 +39,8 @@ El instalador compila la app, la copia a Aplicaciones, la abre y espera a que co
 | `Sources/Engine.swift` | Lee los informes HID del pad (IOHIDManager), los traduce a disparadores, ejecuta las acciones y filtra el evento original con un `CGEventTap` |
 | `Sources/Config.swift` | Perfiles, macros y mapa de posiciones; guarda en `~/Library/Application Support/Macropad/config.json` |
 | `Sources/Bridge.swift` · `main.swift` | Ventana con `WKWebView`, icono de menú y puente JS ↔ Swift |
-| `Resources/ui/` | Interfaz (HTML/CSS/JS) |
+| `Sources/Overlay.swift` | Panel flotante de la chuleta (no roba el foco ni recibe clics) |
+| `Resources/ui/` | Interfaz (HTML/CSS/JS); `labels.js` lo comparten la ventana y la chuleta |
 | `tools/make-icon.swift` | Dibuja el icono |
 
 **Qué envía el pad** (interfaz de teclado, informe `0x01`, y consumer, informe `0x05`): las teclas mandan `Ctrl+Alt+<tecla>`, y los mandos teclas multimedia (volumen, brillo, pista) y `Cmd+Espacio`. El mapa de fábrica está en `Defaults.slots`; el asistente «Aprender todo» lo rehace si hiciera falta.

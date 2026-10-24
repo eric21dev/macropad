@@ -21,6 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         engine.onEvent = { [weak self] name, payload in self?.bridge.emit(name, payload) }
         engine.onProfileChanged = { [weak self] in self?.rebuildStatusMenu() }
         engine.start()
+        Overlay.shared.prepare()
 
         // Primer arranque: registrar el inicio automático al iniciar sesión.
         if !engine.config.firstRunDone {
