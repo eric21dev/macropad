@@ -8,6 +8,7 @@ App para macOS que convierte un macro pad USB de **15 teclas y 3 mandos** (chip 
 
 - **Asignar:** cada tecla y cada mando (girar a izquierda, a derecha y pulsar) lanza lo que elijas: atajo de teclado, texto, macro, abrir app o enlace, comando de shell, tecla multimedia o cambio de perfil.
 - **Chuleta:** una acción que muestra sobre la pantalla el pad con lo que hace cada tecla y mando del perfil activo, y se cierra sola a los pocos segundos.
+- **Copia de seguridad y pausa:** exporta e importa perfiles, macros y el mapa del pad; «Pausar Macropad» (menú de la barra o Ajustes) suspende las acciones y deja pasar las teclas originales.
 - **Macros:** secuencias de pasos (atajos, texto, esperas, comandos, apps, enlaces, multimedia).
 - **Perfiles:** conjuntos de asignaciones; cada perfil puede activarse solo cuando una app concreta está al frente.
 - **Iluminación:** modo, color y capa del LED, guardados en el propio pad. Se envían por HID, **sin sudo**.

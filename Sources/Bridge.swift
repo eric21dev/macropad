@@ -51,7 +51,7 @@ final class Bridge: NSObject, WKScriptMessageHandler {
                     "loginItem": SMAppService.mainApp.status == .enabled, "apps": runningApps()]
         case "save":
             guard let c = decode(Config.self, data) else { return false }
-            engine.config = c; Store.save(c); engine.applyProfileLED(); engine.onProfileChanged?()
+            engine.config = c; Store.save(c); engine.applyProfileLED(); engine.onMenuChange?()
             return true
         case "led":
             guard let l = decode(LED.self, data) else { return false }
@@ -78,6 +78,26 @@ final class Bridge: NSObject, WKScriptMessageHandler {
             guard p.runModal() == .OK, let u = p.url else { return NSNull() }
             return ["name": u.deletingPathExtension().lastPathComponent, "id": Bundle(url: u)?.bundleIdentifier ?? ""]
         case "apps": return runningApps()
+        case "pause": engine.setPaused(data as? Bool ?? false); return engine.paused
+        case "export":
+            let p = NSSavePanel()
+            p.allowedContentTypes = [.json]; p.nameFieldStringValue = "Macropad-configuracion.json"
+            guard p.runModal() == .OK, let u = p.url else { return false }
+            let enc = JSONEncoder(); enc.outputFormatting = [.prettyPrinted, .sortedKeys]
+            guard let d = try? enc.encode(engine.config), (try? d.write(to: u)) != nil else { return false }
+            return true
+        case "import":
+            let p = NSOpenPanel()
+            p.allowedContentTypes = [.json]; p.allowsMultipleSelection = false
+            guard p.runModal() == .OK, let u = p.url else { return NSNull() }
+            guard let d = try? Data(contentsOf: u), var c = try? JSONDecoder().decode(Config.self, from: d), !c.profiles.isEmpty else {
+                return ["error": "El archivo no es una configuración válida de Macropad."]
+            }
+            if !c.profiles.contains(where: { $0.id == c.activeProfile }) { c.activeProfile = c.profiles[0].id }
+            for (k, v) in Defaults.slots where c.slots[k] == nil { c.slots[k] = v }
+            c.firstRunDone = true
+            engine.config = c; Store.save(c); engine.autoProfile = nil; engine.applyProfileLED(); engine.onMenuChange?()
+            return ["config": toObject(c)]
         case "relaunch":
             let path = Bundle.main.bundlePath
             let p = Process(); p.executableURL = URL(fileURLWithPath: "/bin/sh"); p.arguments = ["-c", "sleep 1; /usr/bin/open -n '\(path)'"]

@@ -19,7 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         buildWindow()
         buildStatusItem()
         engine.onEvent = { [weak self] name, payload in self?.bridge.emit(name, payload) }
-        engine.onProfileChanged = { [weak self] in self?.rebuildStatusMenu() }
+        engine.onMenuChange = { [weak self] in self?.rebuildStatusMenu() }
         engine.start()
         Overlay.shared.prepare()
 
@@ -103,9 +103,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             m.addItem(it)
         }
         m.addItem(.separator())
+        let pause = NSMenuItem(title: "Pausar Macropad", action: #selector(togglePause), keyEquivalent: ""); pause.target = self
+        pause.state = engine.paused ? .on : .off; m.addItem(pause)
+        statusItem.button?.appearsDisabled = engine.paused
+        m.addItem(.separator())
         m.addItem(withTitle: "Salir de Macropad", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         statusItem.menu = m
     }
+    @objc func togglePause() { engine.setPaused(!engine.paused) }
     @objc func openFromMenu() { showWindow() }
     @objc func pickProfile(_ s: NSMenuItem) { if let id = s.representedObject as? String { engine.switchProfile(id) } }
 

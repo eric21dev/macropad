@@ -82,7 +82,7 @@ function addProfile() {
 }
 function renderChips() {
   const s = S.status, perms = s.input && s.accessibility;
-  $("#chips").innerHTML = `<div class="chip ${s.device ? "ok" : ""}"><i></i>${s.device ? "Pad conectado" : "Pad no detectado"}</div><div class="chip ${perms ? "ok" : ""}"><i></i>${perms ? "Permisos concedidos" : "Faltan permisos"}</div>`;
+  $("#chips").innerHTML = (s.paused ? `<div class="chip" style="cursor:pointer" onclick="togglePause()"><i></i>En pausa · reanudar</div>` : "") + `<div class="chip ${s.device ? "ok" : ""}"><i></i>${s.device ? "Pad conectado" : "Pad no detectado"}</div><div class="chip ${perms ? "ok" : ""}"><i></i>${perms ? "Permisos concedidos" : "Faltan permisos"}</div>`;
 }
 
 function render() {
@@ -242,9 +242,20 @@ function renderSettings(v) {
       <div class="row mt"><button class="btn ghost sm" onclick="bridge('relaunch')">Reiniciar Macropad</button><button class="btn ghost sm" onclick="bridge('settings','input')">Abrir Ajustes del Sistema</button></div></div>
     <div class="card"><h2>General</h2>
       <div class="tog"><div class="f"><b>Abrir al iniciar sesión</b><div class="hint" style="margin:0">Se queda en la barra de menú, sin ventana.</div></div><button class="sw2 ${S.loginItem ? "on" : ""}" onclick="toggleLogin()"></button></div>
+      <div class="tog"><div class="f"><b>Pausar Macropad</b><div class="hint" style="margin:0">Suspende las acciones y deja pasar las teclas originales. Se reanuda al reiniciar la app.</div></div><button class="sw2 ${S.status.paused ? "on" : ""}" onclick="togglePause()"></button></div>
       <div class="tog"><div class="f"><b>Cambiar de perfil según la app activa</b><div class="hint" style="margin:0">Usa las apps asignadas a cada perfil.</div></div><button class="sw2 ${S.config.autoSwitch ? "on" : ""}" onclick="S.config.autoSwitch=!S.config.autoSwitch;save();render()"></button></div></div>
+    <div class="card"><h2>Copia de seguridad</h2><div class="sub">Exporta perfiles, macros y el mapa del pad a un archivo, o recupéralos de una copia. Importar sustituye la configuración actual.</div>
+      <div class="row"><button class="btn ghost sm" onclick="exportCfg()">Exportar…</button><button class="btn ghost sm" onclick="importCfg()">Importar…</button><span class="hint" id="bkMsg" style="margin:0"></span></div></div>
     <div class="card"><h2>Mapa del pad</h2><div class="sub">Cada tecla y mando envía un código. Si cambias de pad o algo no cuadra, vuelve a enseñárselos uno a uno (24 posiciones).</div><button class="btn ghost sm" onclick="startWizard()">Aprender todo</button></div>
     <div class="card"><h2>Acerca de</h2><div class="sub" style="margin:0">Macropad · ${esc(S.version.version || "")} · ${esc(S.version.branch || "")} ${esc(S.version.commit || "")}. Configuración en <code>~/Library/Application Support/Macropad</code>.</div></div></div>`;
+}
+async function togglePause() { S.status.paused = await bridge("pause", !S.status.paused); renderChips(); if (S.tab === "settings") render(); }
+async function exportCfg() { const ok = await bridge("export"); $("#bkMsg").textContent = ok ? "Exportada ✓" : ""; }
+async function importCfg() {
+  const r = await bridge("import"), m = $("#bkMsg");
+  if (!r) return;
+  if (r.error) { m.textContent = r.error; return; }
+  S.config = r.config; S.sel = null; S.ledDraft = null; S.macroSel = null; render(); const n = $("#bkMsg"); if (n) n.textContent = "Importada ✓";
 }
 async function toggleLogin() { S.loginItem = await bridge("login", !S.loginItem); render(); }
 

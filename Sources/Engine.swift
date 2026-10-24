@@ -117,6 +117,7 @@ final class Engine {
 
     var config: Config = Store.load() { didSet { rebuildIndex() } }
     var autoProfile: String?
+    private(set) var paused = false
     /// Se llama en el hilo principal: ("status" | "pad" | "state", payload JSON-serializable)
     var onEvent: ((String, Any) -> Void)?
 
@@ -198,7 +199,7 @@ final class Engine {
         counter += 1
         let slot = slotForTrigger[trigger]
         onEvent?("pad", ["trigger": trigger, "slot": slot as Any, "n": counter])
-        guard let slot = slot, let a = effectiveProfile.bindings[slot], a.type != "default" else { return }
+        guard !paused, let slot = slot, let a = effectiveProfile.bindings[slot], a.type != "default" else { return }
         run(a)
     }
 
@@ -253,10 +254,10 @@ final class Engine {
             Store.save(self.config)
             self.applyProfileLED()
             self.onEvent?("state", ["activeProfile": target])
-            self.onProfileChanged?()
+            self.onMenuChange?()
         }
     }
-    var onProfileChanged: (() -> Void)?
+    var onMenuChange: (() -> Void)?
 
     @objc private func appActivated(_ n: Notification) {
         guard config.autoSwitch, let app = n.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
@@ -266,7 +267,7 @@ final class Engine {
             autoProfile = match
             applyProfileLED()
             onEvent?("state", ["effectiveProfile": effectiveProfile.id])
-            onProfileChanged?()
+            onMenuChange?()
         }
     }
 
@@ -301,6 +302,13 @@ final class Engine {
     }
 
     // MARK: permisos y estado
+    /// En pausa no se ejecutan acciones ni se bloquean las teclas originales. No se guarda: al abrir la app siempre está activa.
+    func setPaused(_ p: Bool) {
+        paused = p
+        poll()
+        onMenuChange?()
+    }
+
     var inputGranted: Bool { IOHIDCheckAccess(kIOHIDRequestTypeListenEvent) == kIOHIDAccessTypeGranted }
     var axGranted: Bool { AXIsProcessTrusted() }
 
@@ -320,7 +328,7 @@ final class Engine {
 
     func status() -> [String: Any] {
         ["device": deviceConnected(), "input": inputGranted, "accessibility": axGranted, "filter": tapRef != nil,
-         "hidOpen": hidOpen && vendorDev != nil, "ledReady": vendorDev != nil]
+         "hidOpen": hidOpen && vendorDev != nil, "ledReady": vendorDev != nil, "paused": paused]
     }
 
     private var lastInput = false
@@ -359,7 +367,7 @@ final class Engine {
             if let t = tapRef { CGEvent.tapEnable(tap: t, enable: true) }
             return pass
         }
-        if event.getIntegerValueField(.eventSourceUserData) == MAGIC { return pass }
+        if paused || event.getIntegerValueField(.eventSourceUserData) == MAGIC { return pass }
         var id: String?
         if type == .keyDown || type == .keyUp {
             let f = event.flags; var mod: UInt8 = 0
