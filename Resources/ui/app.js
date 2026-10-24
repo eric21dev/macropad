@@ -111,7 +111,7 @@ function renderInspector() {
 function fieldHTML(s, a) {
   const v = esc(a.value || "");
   switch (a.type) {
-    case "keys": return `<label>Atajo</label><div class="row"><input class="f" id="keysIn" value="${v}" placeholder="cmd+shift+4" oninput="setAct('${s}',{value:this.value})"><button class="btn ghost sm" onclick="recordKeys()" id="recBtn">Grabar</button></div><div class="hint">Modificadores: cmd, shift, alt, ctrl. Ej.: <code>cmd+shift+4</code>, <code>ctrl+left</code>.</div>`;
+    case "keys": return `<label>Atajo</label><div class="row"><input class="f" id="keysIn" value="${v}" placeholder="cmd+shift+4" oninput="setAct('${s}',{value:this.value})"><button class="btn ghost sm" onclick="recordKeys()" id="recBtn">Grabar</button></div><div class="hint">Modificadores: cmd, shift, alt, ctrl, fn. Ej.: <code>cmd+shift+4</code>, <code>fn+f11</code>. «Grabar» no detecta fn: añádela a mano.</div>`;
     case "text": return `<label>Texto a escribir</label><textarea oninput="setAct('${s}',{value:this.value})">${v}</textarea>`;
     case "shell": return `<label>Comando</label><textarea placeholder="open -a Calculator" oninput="setAct('${s}',{value:this.value})">${v}</textarea>`;
     case "app": return `<label>Aplicación</label><div class="row"><input class="f" value="${v}" placeholder="Safari" oninput="setAct('${s}',{value:this.value})"><button class="btn ghost sm" onclick="pickApp('${s}')">Elegir…</button></div>`;

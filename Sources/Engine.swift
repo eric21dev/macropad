@@ -65,6 +65,7 @@ enum Keys {
             case "shift": flags.insert(.maskShift)
             case "alt", "opt", "option": flags.insert(.maskAlternate)
             case "ctrl", "control": flags.insert(.maskControl)
+            case "fn": flags.insert(.maskSecondaryFn)
             default: key = mac[alias[part] ?? part]
             }
         }

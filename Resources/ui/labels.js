@@ -14,7 +14,7 @@ const Lbl = (() => {
     const [k, m, u] = t.split(":"); if (k !== "kb") return t;
     const mm = parseInt(m, 16); return (mm & 1 ? "⌃" : "") + (mm & 2 ? "⇧" : "") + (mm & 4 ? "⌥" : "") + (mm & 8 ? "⌘" : "") + hidName(parseInt(u, 16));
   }
-  const PRETTY = { cmd: "⌘", command: "⌘", shift: "⇧", alt: "⌥", opt: "⌥", option: "⌥", ctrl: "⌃", control: "⌃", return: "↩", enter: "↩", delete: "⌫", esc: "⎋", space: "␣", tab: "⇥", left: "←", right: "→", up: "↑", down: "↓" };
+  const PRETTY = { cmd: "⌘", command: "⌘", shift: "⇧", alt: "⌥", opt: "⌥", option: "⌥", ctrl: "⌃", control: "⌃", fn: "fn ", return: "↩", enter: "↩", delete: "⌫", esc: "⎋", space: "␣", tab: "⇥", left: "←", right: "→", up: "↑", down: "↓" };
   const prettyCombo = c => (c || "").split("+").map(p => PRETTY[p.trim().toLowerCase()] || p.trim().toUpperCase()).join("");
   function actLabel(cfg, a, slot) {
     if (!a || a.type === "default") return trigName(cfg.slots[slot]);
