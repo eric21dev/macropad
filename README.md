@@ -21,7 +21,7 @@ App para macOS que convierte un macro pad USB de **15 teclas y 3 mandos** (chip 
 Requisitos: macOS 13 o superior y las herramientas de línea de comandos (`xcode-select --install`).
 
 ```bash
-git clone <este repositorio> macropad && cd macropad && ./install.sh
+git clone https://github.com/eric21dev/macropad.git && cd macropad && ./install.sh
 ```
 
 El instalador compila la app, la copia a Aplicaciones, la abre y espera a que concedas **Monitorización de entrada** y **Accesibilidad**, mostrando el estado del pad y de cada permiso. La app se registra para abrirse al iniciar sesión (en la barra de menú, sin ventana).
@@ -50,8 +50,18 @@ El instalador compila la app, la copia a Aplicaciones, la abre y espera a que co
 
 **LED:** informe de salida `0x03` de 64 bytes al interfaz del fabricante (`usagePage 0xFF00`): `03 fe b0 <capa+1> 08 00 00 00 00 00 01 00 <código>` seguido de `03 fd fe ff`, con `código = (color << 4) | modo`. Protocolo tomado de [ch57x-keyboard-tool](https://github.com/kriomant/ch57x-keyboard-tool).
 
+## Estado y compatibilidad
+
+Está probada con **un único pad**: el de la placa `15key_3knob_20230525` (`1189:8840`) y macOS 26. Es posible que otros modelos del mismo chip envíen códigos distintos; el asistente «Aprender todo» rehace el mapa de teclas, pero el LED y el resto no están verificados fuera de ese modelo. Los reportes de otros pads son bienvenidos (abre una *issue* con el resultado de `ioreg -p IOUSB -l | grep -iE "idVendor|idProduct"`).
+
+No está firmada ni notarizada: se compila desde el código fuente con `./install.sh`.
+
 ## Límites
 
 - Las asignaciones viven en la app, no en la memoria del pad: si lo enchufas a otro ordenador vuelve a lo de fábrica (el LED sí se conserva).
 - El botón *Layer* y el interruptor ON/OFF actúan dentro del pad y la app no los ve.
 - Probado con un único pad (`15key_3knob_20230525`).
+
+## Licencia
+
+[MIT](LICENSE). El protocolo del LED procede del trabajo de [ch57x-keyboard-tool](https://github.com/kriomant/ch57x-keyboard-tool); aquí solo se usan los datos del protocolo, no su código.
