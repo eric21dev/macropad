@@ -255,13 +255,12 @@ function delStep(i) { curMacro().steps.splice(i, 1); save(); render(); }
 // ───────── iluminación ─────────
 const LEDMODES = [["backlight", "Fijo", "Siempre encendido"], ["press", "Al pulsar", "Se ilumina la tecla"], ["shock", "Efecto", "Destello al pulsar"], ["shock2", "Efecto 2", "Otro destello"], ["off", "Apagado", "Sin luz"]];
 function renderLED(v) {
-  const p = cur(); if (!S.ledDraft) S.ledDraft = p.led ? { ...p.led } : { layer: 0, mode: "backlight", color: "blue" };
+  const p = cur(); if (!S.ledDraft) S.ledDraft = p.led ? { ...p.led, layer: 0 } : { layer: 0, mode: "backlight", color: "blue" };
   const d = S.ledDraft, colors = Object.keys(LEDC).filter(c => c !== "white" || d.mode === "backlight");
   if (!colors.includes(d.color) && d.mode !== "off") d.color = "blue";
   v.innerHTML = `<div class="stage">${padHTML(true)}</div><div class="insp" style="width:380px"><h2>Iluminación</h2><div class="sub">Se guarda en el propio pad y se conserva al enchufarlo en otro ordenador.</div>
     <label>Modo</label><div class="modes">${LEDMODES.map(([k, n, s]) => `<button class="mode ${d.mode === k ? "on" : ""}" onclick="ledSet('mode','${k}')">${n}<small>${s}</small></button>`).join("")}</div>
     ${d.mode !== "off" ? `<label>Color</label><div class="sw">${colors.map(c => `<button title="${LEDN[c]}" class="${d.color === c ? "on" : ""}" style="--c:${LEDC[c]}" onclick="ledSet('color','${c}')"></button>`).join("")}</div>` : ""}
-    <label>Capa del pad</label><select onchange="ledSet('layer',+this.value)">${[0, 1, 2].map(l => `<option value="${l}" ${d.layer === l ? "selected" : ""}>Capa ${l + 1}</option>`).join("")}</select>
     <div class="tog"><div class="f"><b>Usar en el perfil «${esc(p.name)}»</b><div class="hint" style="margin:0">Se aplica al activar el perfil.</div></div><button class="sw2 ${p.led ? "on" : ""}" onclick="ledProfile()"></button></div>
     <div class="row"><button class="btn sm" onclick="ledApply()">Aplicar al pad</button><span class="hint" id="ledMsg" style="margin:0">${esc(S.ledMsg)}</span></div></div>`;
   bindPad(); setTimeout(fitPad, 0);
@@ -304,7 +303,7 @@ function renderOverlay() {
 // ───────── eventos de la app ─────────
 function onEvent(n, p) {
   if (n === "status") { S.status = p; renderChips(); renderOverlay(); if (S.tab === "settings") render(); }
-  else if (n === "state") { if (p.activeProfile) S.config.activeProfile = p.activeProfile; render(); }
+  else if (n === "state") { if (p.activeProfile) S.config.activeProfile = p.activeProfile; S.ledDraft = null; S.sel = null; render(); }
   else if (n === "pad") {
     if (S.learning) {
       for (const k in S.config.slots) if (S.config.slots[k] === p.trigger && k !== S.learning) delete S.config.slots[k];
