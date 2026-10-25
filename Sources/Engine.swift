@@ -45,13 +45,30 @@ enum Keys {
         return d
     }()
 
+    // Flechas, inicio/fin, re/av pág y supr: el teclado real les añade la marca fn (así están definidos los atajos del sistema).
+    static let navKeys: Set<CGKeyCode> = [123, 124, 125, 126, 115, 119, 116, 121, 117]
+    static let modKeys: [(CGEventFlags, CGKeyCode)] = [(.maskControl, 59), (.maskShift, 56), (.maskAlternate, 58), (.maskCommand, 55)]
+
     static func post(_ code: CGKeyCode, _ flags: CGEventFlags) {
         let src = CGEventSource(stateID: .hidSystemState)
-        for down in [true, false] {
-            let e = CGEvent(keyboardEventSource: src, virtualKey: code, keyDown: down)
-            e?.flags = flags
+        var f = flags
+        if navKeys.contains(code) { f.insert(.maskSecondaryFn) }
+        func send(_ e: CGEvent?, _ fl: CGEventFlags) {
+            e?.flags = fl
             e?.setIntegerValueField(.eventSourceUserData, value: MAGIC)
             e?.post(tap: .cghidEventTap)
+            usleep(4000)
+        }
+        // Como al teclear: primero se pulsan los modificadores, luego la tecla, y se sueltan al revés.
+        var held = CGEventFlags()
+        for (m, k) in modKeys where flags.contains(m) {
+            held.insert(m)
+            let e = CGEvent(keyboardEventSource: src, virtualKey: k, keyDown: true); e?.type = .flagsChanged; send(e, held)
+        }
+        for down in [true, false] { send(CGEvent(keyboardEventSource: src, virtualKey: code, keyDown: down), f) }
+        for (m, k) in modKeys.reversed() where flags.contains(m) {
+            held.remove(m)
+            let e = CGEvent(keyboardEventSource: src, virtualKey: k, keyDown: false); e?.type = .flagsChanged; send(e, held)
         }
     }
 
@@ -130,6 +147,9 @@ final class Engine {
     private var prevCC: UInt16 = 0
     private var counter = 0
     private var tapRef: CFMachPort?
+    private var recording = false
+    private var swallowUp: Int64?
+    private static let nameForKeycode: [Int64: String] = Dictionary(uniqueKeysWithValues: Keys.mac.map { (Int64($0.value), $0.key) })
     private var lastStatus: [String: Any] = [:]
     private var lastLED: LED?
     private let macroQueue = DispatchQueue(label: "macropad.macro")
@@ -207,7 +227,7 @@ final class Engine {
     func run(_ a: Action) {
         let v = a.value ?? ""
         switch a.type {
-        case "keys": Keys.combo(v)
+        case "keys": macroQueue.async { Keys.combo(v) }
         case "text": macroQueue.async { Keys.type(v) }
         case "shell": sh(["/bin/sh", "-c", v])
         case "app": sh(["/usr/bin/open", "-a", v])
@@ -309,6 +329,19 @@ final class Engine {
         onMenuChange?()
     }
 
+    // MARK: grabar atajos (el filtro ve las teclas antes que macOS, también ctrl+flechas y fn)
+    func startRecording() -> Bool {
+        guard tapRef != nil else { return false }
+        recording = true; swallowUp = nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in if self?.recording == true { self?.finishRecording(nil) } }
+        return true
+    }
+    func cancelRecording() { if recording { finishRecording(nil) } }
+    private func finishRecording(_ combo: String?) {
+        recording = false
+        onEvent?("recorded", ["combo": combo ?? ""])
+    }
+
     var inputGranted: Bool { IOHIDCheckAccess(kIOHIDRequestTypeListenEvent) == kIOHIDAccessTypeGranted }
     var axGranted: Bool { AXIsProcessTrusted() }
 
@@ -367,7 +400,24 @@ final class Engine {
             if let t = tapRef { CGEvent.tapEnable(tap: t, enable: true) }
             return pass
         }
-        if paused || event.getIntegerValueField(.eventSourceUserData) == MAGIC { return pass }
+        if event.getIntegerValueField(.eventSourceUserData) == MAGIC { return pass }
+        if recording && (type == .keyDown || type == .keyUp) {
+            let kc = event.getIntegerValueField(.keyboardEventKeycode)
+            if type == .keyUp { if swallowUp == kc { swallowUp = nil; return nil } }
+            else if let name = Engine.nameForKeycode[kc] {
+                swallowUp = kc
+                let f = event.flags; var parts: [String] = []
+                if f.contains(.maskSecondaryFn) && !Keys.navKeys.contains(CGKeyCode(kc)) { parts.append("fn") }
+                if f.contains(.maskControl) { parts.append("ctrl") }
+                if f.contains(.maskAlternate) { parts.append("alt") }
+                if f.contains(.maskShift) { parts.append("shift") }
+                if f.contains(.maskCommand) { parts.append("cmd") }
+                parts.append(name)
+                finishRecording(name == "esc" && parts.count == 1 ? nil : parts.joined(separator: "+"))
+                return nil
+            }
+        }
+        if paused { return pass }
         var id: String?
         if type == .keyDown || type == .keyUp {
             let f = event.flags; var mod: UInt8 = 0

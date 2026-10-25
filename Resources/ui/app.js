@@ -111,7 +111,7 @@ function renderInspector() {
 function fieldHTML(s, a) {
   const v = esc(a.value || "");
   switch (a.type) {
-    case "keys": return `<label>Atajo</label><div class="row"><input class="f" id="keysIn" value="${v}" placeholder="cmd+shift+4" oninput="setAct('${s}',{value:this.value})"><button class="btn ghost sm" onclick="recordKeys()" id="recBtn">Grabar</button></div><div class="hint">Modificadores: cmd, shift, alt, ctrl, fn. Ej.: <code>cmd+shift+4</code>, <code>fn+f11</code>. «Grabar» no detecta fn: añádela a mano.</div>`;
+    case "keys": return `<label>Atajo</label><div class="row"><input class="f" id="keysIn" value="${v}" placeholder="cmd+shift+4" oninput="setAct('${s}',{value:this.value})"><button class="btn ghost sm" onclick="recordKeys()" id="recBtn">Grabar</button></div><div class="hint">Modificadores: cmd, shift, alt, ctrl, fn. Ej.: <code>cmd+shift+4</code>, <code>fn+f11</code>. «Grabar» captura también ctrl+flechas y fn.</div>`;
     case "text": return `<label>Texto a escribir</label><textarea oninput="setAct('${s}',{value:this.value})">${v}</textarea>`;
     case "shell": return `<label>Comando</label><textarea placeholder="open -a Calculator" oninput="setAct('${s}',{value:this.value})">${v}</textarea>`;
     case "app": return `<label>Aplicación</label><div class="row"><input class="f" value="${v}" placeholder="Safari" oninput="setAct('${s}',{value:this.value})"><button class="btn ghost sm" onclick="pickApp('${s}')">Elegir…</button></div>`;
@@ -136,6 +136,11 @@ async function pickApp(s) { const r = await bridge("pickApp"); if (r && r.name) 
 let recHandler = null;
 function recordKeys() {
   const btn = $("#recBtn"); if (!btn) return;
+  if (native) {   // grabador nativo: ve ctrl+flechas, fn y atajos que macOS reserva
+    if (S.recording) { S.recording = false; bridge("recordCancel"); btn.textContent = "Grabar"; return; }
+    bridge("record").then(ok => { if (!ok) { btn.textContent = "Falta Accesibilidad"; return; } S.recording = true; btn.textContent = "Pulsa el atajo… (Esc cancela)"; });
+    return;
+  }
   if (recHandler) { document.removeEventListener("keydown", recHandler, true); recHandler = null; btn.textContent = "Grabar"; return; }
   btn.textContent = "Pulsa el atajo…";
   const codes = { Space: "space", Enter: "return", Escape: "esc", Backspace: "delete", Tab: "tab", ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down", Minus: "-", Equal: "=", BracketLeft: "[", BracketRight: "]", Semicolon: ";", Quote: "'", Comma: ",", Period: ".", Slash: "/", Backslash: "\\", Backquote: "`", Home: "home", End: "end", PageUp: "pageup", PageDown: "pagedown" };
@@ -272,6 +277,7 @@ function renderOverlay() {
 
 // ───────── eventos de la app ─────────
 function onEvent(n, p) {
+  if (n === "recorded") { S.recording = false; const rb = $("#recBtn"); if (rb) rb.textContent = "Grabar"; if (p.combo && S.sel) setAct(S.sel, { value: p.combo }, true); return; }
   if (n === "status") { S.status = p; renderChips(); renderOverlay(); if (S.tab === "settings") render(); }
   else if (n === "state") { if (p.activeProfile) S.config.activeProfile = p.activeProfile; S.ledDraft = null; S.sel = null; render(); }
   else if (n === "pad") {

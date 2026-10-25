@@ -78,6 +78,8 @@ final class Bridge: NSObject, WKScriptMessageHandler {
             guard p.runModal() == .OK, let u = p.url else { return NSNull() }
             return ["name": u.deletingPathExtension().lastPathComponent, "id": Bundle(url: u)?.bundleIdentifier ?? ""]
         case "apps": return runningApps()
+        case "record": return engine.startRecording()
+        case "recordCancel": engine.cancelRecording(); return true
         case "pause": engine.setPaused(data as? Bool ?? false); return engine.paused
         case "export":
             let p = NSSavePanel()
